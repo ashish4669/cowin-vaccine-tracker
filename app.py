@@ -53,7 +53,7 @@ def notifyUser(slt,slots_df):
         slt.table(slots_df)
         os.system('say "your preferred slots are available"')
     else:
-        st.error('No slots available for your preference, please start a tracker to keep you notified.')
+        slt.error('No slots available for your preference, please start a tracker to keep you notified.')
 
 def getPincodeFilters():
     col1, col2, col3 = st.beta_columns(3)
@@ -96,11 +96,18 @@ def trackSlots(identifier, vaccine_type, min_age, date, option):
     tsp = st.text('Slots will be tracked at 5 seconds interval. Last Tracked at : ' + str(datetime.now().time()))
     while True:        
         res = requests.get(URL.format(identifier,date))
+        
         slots = json.loads(res.text)["sessions"]
         slots_df = pd.DataFrame(slots, columns = COLUMNS.keys())
         slots_df.rename(columns = COLUMNS, inplace = True)
         slots_df = filterSlots(slots_df, vaccine_type, min_age)
-        notifyUser(slt,slots_df)
+        if len(slots_df):
+            slt.table(slots_df)
+            centres = slots_df["Centre"].unique()
+            centres_str = "your preferred slots are available at " + ",".join(centres)
+            os.system('say ' + centres_str)
+        else:
+            slt.info('No slots available for your preference. Relax, we are tracking them for you.')
         tsp.text('Slots will be tracked at 5 seconds interval. Last Tracked at : ' + str(datetime.now().time()))
         time.sleep(5)
  
@@ -111,11 +118,16 @@ def findSlots(identifier, vaccine_type, min_age, date, option):
         URL = URL_DISTRICT
     slt = st.table(pd.DataFrame())
     res = requests.get(URL.format(identifier,date))
+    print(res.text)
     slots = json.loads(res.text)["sessions"]
     slots_df = pd.DataFrame(slots, columns = COLUMNS.keys())
     slots_df.rename(columns = COLUMNS, inplace = True)
     slots_df = filterSlots(slots_df, vaccine_type, min_age)
-    notifyUser(slt,slots_df)
+    if len(slots_df):
+        slt.table(slots_df)
+        os.system('say "your preferred slots are available"')
+    else:
+        slt.error('No slots available for your preference, please start a tracker to keep you notified.')
 
 st.set_page_config(layout='wide', initial_sidebar_state='collapsed')
 
