@@ -94,11 +94,8 @@ def trackSlots(identifier, vaccine_type, min_age, date, option):
         URL = URL_DISTRICT
     slt = st.table(pd.DataFrame())
     tsp = st.text('Slots will be tracked at 5 seconds interval. Last Tracked at : ' + str(datetime.now().time()))
-    while True: 
-        print(URL.format(identifier,date))       
+    while True:        
         res = requests.get(URL.format(identifier,date))
-        print(res.status_code)
-        print(res.text)
         
         slots = json.loads(res.text)["sessions"]
         slots_df = pd.DataFrame(slots, columns = COLUMNS.keys())
@@ -106,7 +103,9 @@ def trackSlots(identifier, vaccine_type, min_age, date, option):
         slots_df = filterSlots(slots_df, vaccine_type, min_age)
         if len(slots_df):
             slt.table(slots_df)
-            os.system('say "your preferred slots are available"')
+            centres = slots_df["Centre"].unique()
+            centres_str = "your preferred slots are available at " + ",".join(centres)
+            os.system('say ' + centres_str)
         else:
             slt.info('No slots available for your preference. Relax, we are tracking them for you.')
         tsp.text('Slots will be tracked at 5 seconds interval. Last Tracked at : ' + str(datetime.now().time()))
@@ -118,9 +117,7 @@ def findSlots(identifier, vaccine_type, min_age, date, option):
     else:
         URL = URL_DISTRICT
     slt = st.table(pd.DataFrame())
-    print(URL.format(identifier,date))  
     res = requests.get(URL.format(identifier,date))
-    print(res.status_code)
     print(res.text)
     slots = json.loads(res.text)["sessions"]
     slots_df = pd.DataFrame(slots, columns = COLUMNS.keys())
