@@ -117,8 +117,10 @@ def findSlots(identifier, vaccine_type, min_age, date, option):
     else:
         URL = URL_DISTRICT
     slt = st.table(pd.DataFrame())
-    res = requests.get(URL.format(identifier,date))
-    print(res.text)
+    final_URL = URL.format(identifier,date)
+    res = requests.get(final_URL)
+    print(final_URL)
+    print(res.text, res.status_code)
     slots = json.loads(res.text)["sessions"]
     slots_df = pd.DataFrame(slots, columns = COLUMNS.keys())
     slots_df.rename(columns = COLUMNS, inplace = True)
