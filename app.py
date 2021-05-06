@@ -94,8 +94,19 @@ def trackSlots(identifier, vaccine_type, min_age, date, option):
         URL = URL_DISTRICT
     slt = st.table(pd.DataFrame())
     tsp = st.text('Slots will be tracked at 5 seconds interval. Last Tracked at : ' + str(datetime.now().time()))
-    while True:        
-        res = requests.get(URL.format(identifier,date))
+    while True:   
+        final_URL = URL.format(identifier,date)
+        headers = {
+        "accept":"application/json",
+        "Accept-Language": "hi_IN",
+        "cache-control":"max-age=0",
+        "sec-fetch-dest": "document",
+        "sec-fetch-mode": "navigate",
+        "upgrade-insecure-requests": "1",
+        "user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36"
+        }
+                 
+        res = requests.get(final_URL,headers=headers, verify=False)
         
         slots = json.loads(res.text)["sessions"]
         slots_df = pd.DataFrame(slots, columns = COLUMNS.keys())
@@ -108,8 +119,8 @@ def trackSlots(identifier, vaccine_type, min_age, date, option):
             os.system('say ' + centres_str)
         else:
             slt.info('No slots available for your preference. Relax, we are tracking them for you.')
-        tsp.text('Slots will be tracked at 5 seconds interval. Last Tracked at : ' + str(datetime.now().time()))
-        time.sleep(5)
+        tsp.text('Slots will be tracked at 15 seconds interval. Last Tracked at : ' + str(datetime.now().time()))
+        time.sleep(15)
  
 def findSlots(identifier, vaccine_type, min_age, date, option):
     if option == "Pincode":
@@ -118,8 +129,17 @@ def findSlots(identifier, vaccine_type, min_age, date, option):
         URL = URL_DISTRICT
     slt = st.table(pd.DataFrame())
     final_URL = URL.format(identifier,date)
-    res = requests.get(final_URL)
-    print(final_URL)
+
+    headers = {
+    "accept":"application/json",
+    "Accept-Language": "hi_IN",
+    "cache-control":"max-age=0",
+    "sec-fetch-dest": "document",
+    "sec-fetch-mode": "navigate",
+    "upgrade-insecure-requests": "1",
+    "user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36"
+    }
+    res = requests.get(final_URL, headers=headers, verify=False)
     print(res.text, res.status_code)
     slots = json.loads(res.text)["sessions"]
     slots_df = pd.DataFrame(slots, columns = COLUMNS.keys())
