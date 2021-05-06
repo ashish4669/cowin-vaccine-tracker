@@ -140,7 +140,8 @@ def findSlots(identifier, vaccine_type, min_age, date, option):
     "user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36"
     }
     res = requests.get(final_URL, headers=headers, verify=False)
-    print(res.text, res.status_code)
+    st.write(res.text)
+    st.write( res.status_code)
     slots = json.loads(res.text)["sessions"]
     slots_df = pd.DataFrame(slots, columns = COLUMNS.keys())
     slots_df.rename(columns = COLUMNS, inplace = True)
