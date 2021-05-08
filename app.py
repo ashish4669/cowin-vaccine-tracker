@@ -127,7 +127,12 @@ def findSlots(identifier, vaccine_type, min_age, date, option):
     final_URL = URL.format(identifier,date)
     st.write(final_URL)
 
-    res = requests.get(final_URL, headers=headers, verify=False)
+    proxyDict = { 
+              "http"  : "14.97.15.97:80", 
+              "https" : "14.140.131.82:3128", 
+            }
+
+    res = requests.get(final_URL, headers=headers, proxies=proxyDict, verify=False)
     st.write(res.text)
     st.write(res.status_code)
     slots = json.loads(res.text)["sessions"]
