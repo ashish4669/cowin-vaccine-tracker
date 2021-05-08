@@ -7,6 +7,7 @@ import csv
 import time
 import streamlit as st
 import os
+import chime
 
 URL_PINCODE = "https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByPin?pincode={}&date={}"
 URL_DISTRICT = "https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByDistrict?district_id={}&date={}"
@@ -23,17 +24,25 @@ COLUMNS = {
     'vaccine':"Vaccine"
 }
 
+headers = {
+    "accept":"application/json",
+    "Accept-Language": "hi_IN",
+    "cache-control":"max-age=0",
+    "sec-fetch-dest": "document",
+    "sec-fetch-mode": "navigate",
+    "upgrade-insecure-requests": "1",
+    "user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36"
+}
+
 @st.cache
 def load_districts():
     reader = csv.DictReader(open("DistrictCode.csv"))
-    
     data_dict = {}
     for row in reader:
         if row["State"] in data_dict.keys():
             data_dict[row["State"]][row["District"]] = row["DistrictID"]
         else:
             data_dict[row["State"]] = {row["District"]: row["DistrictID"]}
-            
     return data_dict
 
 def isValidPincode(pincode):
@@ -48,12 +57,6 @@ def filterSlots(df,vaccine_type,minimum_age):
         df = df[df.Age == minimum_age]
     return df
     
-def notifyUser(slt,slots_df):
-    if len(slots_df):
-        slt.table(slots_df)
-        os.system('say "your preferred slots are available"')
-    else:
-        slt.error('No slots available for your preference, please start a tracker to keep you notified.')
 
 def getPincodeFilters():
     col1, col2, col3 = st.beta_columns(3)
@@ -67,6 +70,7 @@ def getPincodeFilters():
         min_age = st.selectbox('Select Minimum Age',['Any',18,45])
         st.write('You selected:', min_age)
     return pincode, vaccine_type, min_age
+        
         
 
 def getDistrictFilters(location_dict):
@@ -96,16 +100,7 @@ def trackSlots(identifier, vaccine_type, min_age, date, option):
     tsp = st.text('Slots will be tracked at 5 seconds interval. Last Tracked at : ' + str(datetime.now().time()))
     while True:   
         final_URL = URL.format(identifier,date)
-        headers = {
-        "accept":"application/json",
-        "Accept-Language": "hi_IN",
-        "cache-control":"max-age=0",
-        "sec-fetch-dest": "document",
-        "sec-fetch-mode": "navigate",
-        "upgrade-insecure-requests": "1",
-        "user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36"
-        }
-                 
+
         res = requests.get(final_URL,headers=headers, verify=False)
         
         slots = json.loads(res.text)["sessions"]
@@ -116,11 +111,12 @@ def trackSlots(identifier, vaccine_type, min_age, date, option):
             slt.table(slots_df)
             centres = slots_df["Centre"].unique()
             centres_str = "your preferred slots are available at " + ",".join(centres)
-            os.system('say ' + centres_str)
+            # os.system('say ' + centres_str)
+            chime.success()
         else:
             slt.info('No slots available for your preference. Relax, we are tracking them for you.')
         tsp.text('Slots will be tracked at 15 seconds interval. Last Tracked at : ' + str(datetime.now().time()))
-        time.sleep(15)
+        time.sleep(5)
  
 def findSlots(identifier, vaccine_type, min_age, date, option):
     if option == "Pincode":
@@ -130,25 +126,15 @@ def findSlots(identifier, vaccine_type, min_age, date, option):
     slt = st.table(pd.DataFrame())
     final_URL = URL.format(identifier,date)
 
-    headers = {
-    "accept":"application/json",
-    "Accept-Language": "hi_IN",
-    "cache-control":"max-age=0",
-    "sec-fetch-dest": "document",
-    "sec-fetch-mode": "navigate",
-    "upgrade-insecure-requests": "1",
-    "user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36"
-    }
     res = requests.get(final_URL, headers=headers, verify=False)
-    st.write(res.text)
-    st.write( res.status_code)
     slots = json.loads(res.text)["sessions"]
     slots_df = pd.DataFrame(slots, columns = COLUMNS.keys())
     slots_df.rename(columns = COLUMNS, inplace = True)
     slots_df = filterSlots(slots_df, vaccine_type, min_age)
     if len(slots_df):
         slt.table(slots_df)
-        os.system('say "your preferred slots are available"')
+        # os.system('say "your preferred slots are available"')
+        chime.info()
     else:
         slt.error('No slots available for your preference, please start a tracker to keep you notified.')
 
