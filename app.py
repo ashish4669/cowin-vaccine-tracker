@@ -127,9 +127,11 @@ def findSlots(identifier, vaccine_type, min_age, date, option):
     final_URL = URL.format(identifier,date)
     st.write(final_URL)
 
+    http_proxy  = "http://14.97.15.97:80"
+    https_proxy = "https://14.140.131.82:3128"
     proxyDict = { 
-              "http"  : "14.97.15.97:80", 
-              "https" : "14.140.131.82:3128", 
+              "http"  : http_proxy, 
+              "https" : https_proxy, 
             }
 
     res = requests.get(final_URL, headers=headers, proxies=proxyDict, verify=False)
