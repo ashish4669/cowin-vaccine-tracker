@@ -9,9 +9,11 @@ import streamlit as st
 import os
 import chime
 
+#CoWIN Public API URLs
 URL_PINCODE = "https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByPin?pincode={}&date={}"
 URL_DISTRICT = "https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByDistrict?district_id={}&date={}"
 
+#Dataframe Column Names
 COLUMNS = {
     'date':"Date",
     'district_name' : "District",
@@ -24,6 +26,7 @@ COLUMNS = {
     'vaccine':"Vaccine"
 }
 
+#Request Headers
 headers = {
     "accept":"application/json",
     "Accept-Language": "hi_IN",
@@ -34,6 +37,7 @@ headers = {
     "user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36"
 }
 
+#Function to load districts and state data
 @st.cache
 def load_districts():
     reader = csv.DictReader(open("DistrictCode.csv"))
@@ -45,11 +49,13 @@ def load_districts():
             data_dict[row["State"]] = {row["District"]: row["DistrictID"]}
     return data_dict
 
+#Function to check if pincode is valid
 def isValidPincode(pincode):
     if pincode.isnumeric() and len(pincode) == 6:
         return True
     return False
 
+#Function to filter slots based on vacine type and minimum age parameters
 def filterSlots(df,vaccine_type,minimum_age):
     if vaccine_type != "Any":
         df = df[df.Type == vaccine_type]
@@ -58,6 +64,7 @@ def filterSlots(df,vaccine_type,minimum_age):
     return df
     
 
+#Function to fetch pincode based parameters
 def getPincodeFilters():
     col1, col2, col3 = st.beta_columns(3)
     with col1:
@@ -72,7 +79,7 @@ def getPincodeFilters():
     return pincode, vaccine_type, min_age
         
         
-
+#Function to fetch district based parameters
 def getDistrictFilters(location_dict):
     col1, col2, col3, col4 = st.beta_columns(4)
     with col1:
@@ -91,13 +98,14 @@ def getDistrictFilters(location_dict):
     return districtID, vaccine_type, min_age
     
 
+#Function to track slots 
 def trackSlots(identifier, vaccine_type, min_age, date, option):
     if option == "Pincode":
         URL = URL_PINCODE
     else:
         URL = URL_DISTRICT
     slt = st.table(pd.DataFrame())
-    tsp = st.text('Slots will be tracked at 5 seconds interval. Last Tracked at : ' + str(datetime.now().time()))
+    tsp = st.text('Slots will be tracked at 10 seconds interval. Last Tracked at : ' + str(datetime.now().time()))
     while True:   
         final_URL = URL.format(identifier,date)
 
@@ -111,13 +119,13 @@ def trackSlots(identifier, vaccine_type, min_age, date, option):
             slt.table(slots_df)
             centres = slots_df["Centre"].unique()
             centres_str = "your preferred slots are available at " + ",".join(centres)
-            # os.system('say ' + centres_str)
-            chime.success()
+            os.system('say ' + centres_str)
         else:
             slt.info('No slots available for your preference. Relax, we are tracking them for you.')
-        tsp.text('Slots will be tracked at 15 seconds interval. Last Tracked at : ' + str(datetime.now().time()))
-        time.sleep(5)
- 
+        tsp.text('Slots will be tracked at 10 seconds interval. Last Tracked at : ' + str(datetime.now().time()))
+        time.sleep(10)
+
+#Function to find slots
 def findSlots(identifier, vaccine_type, min_age, date, option):
     if option == "Pincode":
         URL = URL_PINCODE
@@ -125,26 +133,14 @@ def findSlots(identifier, vaccine_type, min_age, date, option):
         URL = URL_DISTRICT
     slt = st.table(pd.DataFrame())
     final_URL = URL.format(identifier,date)
-    st.write(final_URL)
-
-    http_proxy  = "http://14.97.15.97:80"
-    https_proxy = "https://14.140.131.82:3128"
-    proxyDict = { 
-              "http"  : http_proxy, 
-              "https" : https_proxy, 
-            }
-
-    res = requests.get(final_URL, headers=headers, proxies=proxyDict, verify=False)
-    st.write(res.text)
-    st.write(res.status_code)
+    res = requests.get(final_URL, headers=headers, verify=False)
     slots = json.loads(res.text)["sessions"]
     slots_df = pd.DataFrame(slots, columns = COLUMNS.keys())
     slots_df.rename(columns = COLUMNS, inplace = True)
     slots_df = filterSlots(slots_df, vaccine_type, min_age)
     if len(slots_df):
         slt.table(slots_df)
-        # os.system('say "your preferred slots are available"')
-        chime.info()
+        os.system('say "your preferred slots are available"')
     else:
         slt.error('No slots available for your preference, please start a tracker to keep you notified.')
 
